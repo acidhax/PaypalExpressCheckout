@@ -1,0 +1,9 @@
+{
+  "name": "PaypalExpressCheckout",
+  "description": "Implementing Paypals KVP Express Checkout",
+  "author": "Mathieu Gosbee <mail@matbee.com>",
+  "dependencies": {
+    "request": "^2.53.0"
+  },
+  "main": "index.js"
+}
