@@ -8,29 +8,7 @@ var SetExpressCheckout = Paypal.SetExpressCheckout;
 var GetExpressCheckoutDetails = Paypal.GetExpressCheckoutDetails;
 var CreateRecurringPaymentsProfile = Paypal.CreateRecurringPaymentsProfile;
 var DoExpressCheckoutPayment = Paypal.DoExpressCheckoutPayment;
-var testingRecurringPayments = false;
 
-app.get('/', function (req, res) {
-	var obj;
-	if (testingRecurringPayments) {
-		obj = {
-			type:"RecurringPayments",
-			description: "VideostreamPremium",
-			amount: 1.50
-		};
-	} else {
-		obj = {
-			type: "SALE",
-			amount: 25.00,
-			currencyCode: "USD"
-		}
-	}
-	var newCheckout = new SetExpressCheckout(obj);
-	newCheckout.exec(function (err, expressCheckoutResponse) {
-		console.log(err, expressCheckoutResponse);
-		res.redirect(expressCheckoutResponse.getAuthorizationUrl());
-	});
-});
 app.get('/lifetime', function (req, res) {
 	var obj = {
 		type: "SALE",
@@ -47,6 +25,9 @@ app.get('/lifetime', function (req, res) {
 		console.log(err, expressCheckoutResponse);
 		res.redirect(expressCheckoutResponse.getAuthorizationUrl());
 	});
+});
+app.get('/subscribe', function (req, res) {
+	res.send('<html><head></head><body><a href="/subscribe/monthly">Monthly</a><br/><a href="/subscribe/yearly">yearly</a></body></html>')
 });
 app.get('/subscribe/:period', function (req, res) {
 	var period = req.params.period;
