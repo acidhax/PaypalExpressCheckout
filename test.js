@@ -8,7 +8,7 @@ var SetExpressCheckout = Paypal.SetExpressCheckout;
 var GetExpressCheckoutDetails = Paypal.GetExpressCheckoutDetails;
 var CreateRecurringPaymentsProfile = Paypal.CreateRecurringPaymentsProfile;
 var DoExpressCheckoutPayment = Paypal.DoExpressCheckoutPayment;
-var testingRecurringPayments = true;
+var testingRecurringPayments = false;
 
 app.get('/', function (req, res) {
 	var obj;
@@ -37,34 +37,70 @@ app.get('/cancel', function (req, res) {
 });
 app.get('/complete', function (req, res) {
 	console.log(req.headers, req.body, req.query);
-	res.end("complete: " + req.query.token);
+	// res.end("complete: " + req.query.token);
 	var checkDetails = new GetExpressCheckoutDetails(req.query.token);
-	checkDetails.exec(function (err, getExpressCheckoutDetailsResponse) {
+	checkDetails.exec(function (err, paypalRes) {
 		if (!err) {
-			console.log(err, getExpressCheckoutDetailsResponse);
-			var payerId = getExpressCheckoutDetailsResponse.getPayerId();
-			var token = getExpressCheckoutDetailsResponse.getToken();
-			var type = getExpressCheckoutDetailsResponse.get("PAYMENTREQUEST_0_CUSTOM");
-			if (type == "RecurringPayments") {
-				var recurring = new CreateRecurringPaymentsProfile(token, payerId);
-				recurring.setStartDate(new Date());
-				recurring.setDescription("VideostreamPremium");
-				recurring.setBillingPeriod("Month");
-				recurring.setBillingFrequency(1);
-				recurring.setAmount(1.50);
-				recurring.exec(function (err, createRecurringPaymentsProfileResponse) {
-					console.log(err, createRecurringPaymentsProfileResponse);
-				})
-			} else if (type == "SALE") {
-				var amt = getExpressCheckoutDetailsResponse.get("AMT");
-				var currencyCode = getExpressCheckoutDetailsResponse.get("CURRENCYCODE");
-				var checkout = new DoExpressCheckoutPayment(token, payerId, "SALE", amt, currencyCode);
-				checkout.exec(function (err, doExpressCheckoutPaymentResponse) {
-					console.log(err, doExpressCheckoutPaymentResponse);
-				});
+			console.log(err, paypalRes);
+			console.info("ACK:", paypalRes.getAck());
+			var payerId = paypalRes.getPayerId();
+			var token = paypalRes.getToken();
+			if (paypalRes.getAck() == "Success") {
+				res.end('<html><head></head><body><a href="/accept?token='+token+'">Accept</a></body></html>')
+			} else {
+				res.end('nope');
 			}
 		}
 	});
+});
+
+app.get('/accept', function (req, res) {
+	var checkDetails = new GetExpressCheckoutDetails(req.query.token);
+	checkDetails.exec(function (err, paypalRes) {
+		var payerId = paypalRes.getPayerId();
+		var token = paypalRes.getToken();
+		if (paypalRes.getAck() != "Success") {
+			return res.end(paypalRes.obj);
+		}
+		var type = paypalRes.get("PAYMENTREQUEST_0_CUSTOM");
+		if (type == "RecurringPayments") {
+			var recurring = new CreateRecurringPaymentsProfile(token, payerId);
+			recurring.setStartDate(new Date());
+			recurring.setDescription("VideostreamPremium");
+			recurring.setBillingPeriod("Month");
+			recurring.setBillingFrequency(1);
+			recurring.setAmount(1.50);
+			recurring.exec(function (err, paypalRes) {
+				console.log(err, paypalRes);
+				if (paypalRes.getAck() == "Success") {
+					if (paypalRes.getProfileStatus() == "ActiveProfile") {
+						// Much success
+						res.end(JSON.stringify(paypalRes.getObj()));
+					} else {
+						// Much fail.
+						res.end(JSON.stringify(paypalRes.getObj()));
+					}
+				} else {
+					res.end(JSON.stringify(paypalRes.getObj()));
+				}
+			});
+		} else if (type == "SALE") {
+			var amt = paypalRes.get("AMT");
+			var currencyCode = paypalRes.get("CURRENCYCODE");
+			var checkout = new DoExpressCheckoutPayment(token, payerId, "SALE", amt, currencyCode);
+			checkout.exec(function (err, paypalRes) {
+				console.log(err, paypalRes);
+				if (paypalRes.getAck() == "Success" && paypalRes.get("PAYMENTINFO_0_PAYMENTSTATUS") == "Completed") {
+					// Much success.
+					res.end(JSON.stringify(paypalRes.getObj()));
+				} else {
+					// Much fail.
+					res.end(JSON.stringify(paypalRes.getObj()));
+				}
+			});
+		}
+	});
+	
 });
 http.createServer(app).listen(15225, function(){
   console.log("Express server listening on port " + 15225);

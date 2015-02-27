@@ -18,4 +18,7 @@ var DoExpressCheckoutPaymentResponse = function (res) {
 	PaypalResponseBase.call(this, res);
 };
 DoExpressCheckoutPaymentResponse.prototype = Object.create(PaypalResponseBase.prototype);
+DoExpressCheckoutPaymentResponse.prototype.getProfileStatus = function() {
+	return this.get("PROFILESTATUS");
+};
 module.exports = DoExpressCheckoutPayment;

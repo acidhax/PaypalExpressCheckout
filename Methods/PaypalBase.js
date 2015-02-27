@@ -54,7 +54,7 @@ PaypalResponseBase.prototype.getToken = function() {
 	return this.obj.TOKEN;
 };
 PaypalResponseBase.prototype.getAck = function() {
-	return this.obj.ack;
+	return this.obj.ACK;
 };
 PaypalResponseBase.prototype.getObj = function() {
 	return this.obj;
