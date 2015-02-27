@@ -71,12 +71,32 @@ PaypalResponseBase.prototype.parseAsObject = function(res) {
 			var item = each[i].split("=");
 			var key = item[0];
 			var value = decodeURIComponent(item[1]);
-
-			response[key] = value;
+			if (key.indexOf("_") > -1) {
+				var separated = key.split("_");
+				var realKey = separated[0];
+				var realKeyIndex = separated[1];
+				var realProperty = separated[2];
+				if (!response[realKey]) {
+					response[realKey] = [];
+				}
+				if (!response[realKey][realKeyIndex]) {
+					response[realKey][realKeyIndex] = {};
+				}
+				response[realKey][realKeyIndex][realProperty] = value;
+			} else {
+				response[key] = value;
+			}
 		}
 		return response;
 	} catch (ex) {
 		// Fail yo.
+	}
+};
+PaypalResponseBase.prototype.findPayments = function(obj) {
+	for (var i in this.obj) {
+		if (i.indexOf("_") > -1) {
+			var separated = i.split("_");
+		}
 	}
 };
 module.exports = {

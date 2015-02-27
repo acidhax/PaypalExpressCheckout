@@ -11,9 +11,7 @@ var DoExpressCheckoutPayment = Paypal.DoExpressCheckoutPayment;
 
 app.get('/lifetime', function (req, res) {
 	var googleId = req.query.googleId;
-	if (!googleId) {
-		return res.end();
-	}
+
 	var obj = {
 		type: "SALE",
 		amount: 25.00,
@@ -36,9 +34,7 @@ app.get('/subscribe', function (req, res) {
 });
 app.get('/subscribe/:period', function (req, res) {
 	var googleId = req.query.googleId;
-	if (!googleId) {
-		return res.end();
-	}
+
 	var period = req.params.period;
 	var obj = {
 		type:"RecurringPayments",
@@ -69,8 +65,8 @@ app.get('/complete', function (req, res) {
 	checkDetails.exec(function (err, paypalRes) {
 		if (!err) {
 			console.log(err, paypalRes);
-			console.info("ACK:", paypalRes.getAck());
-			var custom = JSON.parse(paypalRes.get("PAYMENTREQUEST_0_CUSTOM"));
+			console.info("ACK:", paypalRes.getObj());
+			var custom = JSON.parse(paypalRes.get("PAYMENTREQUEST")[0].CUSTOM);
 			console.log("CUSTOM", custom);
 			var payerId = paypalRes.getPayerId();
 			var token = paypalRes.getToken();
@@ -92,7 +88,7 @@ app.get('/accept', function (req, res) {
 		if (paypalRes.getAck() != "Success") {
 			return res.end(paypalRes.obj);
 		}
-		var custom = JSON.parse(paypalRes.get("PAYMENTREQUEST_0_CUSTOM"));
+		var custom = JSON.parse(paypalRes.get("PAYMENTREQUEST")[0].CUSTOM);
 		console.log(custom);
 		var type = custom.type;
 		if (type == "RecurringPayments") {
