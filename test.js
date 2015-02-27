@@ -31,6 +31,44 @@ app.get('/', function (req, res) {
 		res.redirect(expressCheckoutResponse.getAuthorizationUrl());
 	});
 });
+app.get('/lifetime', function (req, res) {
+	var obj = {
+		type: "SALE",
+		amount: 25.00,
+		currencyCode: "USD",
+		custom: {
+			type: "SALE",
+			amount: 25.00,
+			currencyCode: "USD"
+		}
+	};
+	var newCheckout = new SetExpressCheckout(obj);
+	newCheckout.exec(function (err, expressCheckoutResponse) {
+		console.log(err, expressCheckoutResponse);
+		res.redirect(expressCheckoutResponse.getAuthorizationUrl());
+	});
+});
+app.get('/subscribe/:period', function (req, res) {
+	var period = req.params.period;
+	var obj = {
+		type:"RecurringPayments",
+		description: "VideostreamPremium"
+	};
+	if (period == "monthly") {
+		obj.amount = 1.50
+		obj.custom = {period: "Month", amount: obj.amount, type: "RecurringPayments"}
+	} else if (period = "yearly") {
+		obj.amount = 10.00
+		obj.custom = {period: "Year", amount: obj.amount, type: "RecurringPayments"}
+	} else {
+		return res.end();
+	}
+	var newCheckout = new SetExpressCheckout(obj);
+	newCheckout.exec(function (err, expressCheckoutResponse) {
+		console.log(err, expressCheckoutResponse);
+		res.redirect(expressCheckoutResponse.getAuthorizationUrl());
+	});
+});
 app.get('/cancel', function (req, res) {
 	console.log(req.headers, req.body, req.query);
 	res.end("cancel: " + req.query.token);
@@ -62,14 +100,16 @@ app.get('/accept', function (req, res) {
 		if (paypalRes.getAck() != "Success") {
 			return res.end(paypalRes.obj);
 		}
-		var type = paypalRes.get("PAYMENTREQUEST_0_CUSTOM");
+		var custom = JSON.parse(paypalRes.get("PAYMENTREQUEST_0_CUSTOM"));
+		console.log(custom);
+		var type = custom.type;
 		if (type == "RecurringPayments") {
 			var recurring = new CreateRecurringPaymentsProfile(token, payerId);
 			recurring.setStartDate(new Date());
 			recurring.setDescription("VideostreamPremium");
-			recurring.setBillingPeriod("Month");
+			recurring.setBillingPeriod(custom.period);
 			recurring.setBillingFrequency(1);
-			recurring.setAmount(1.50);
+			recurring.setAmount(custom.amount);
 			recurring.exec(function (err, paypalRes) {
 				console.log(err, paypalRes);
 				if (paypalRes.getAck() == "Success") {
@@ -100,7 +140,6 @@ app.get('/accept', function (req, res) {
 			});
 		}
 	});
-	
 });
 http.createServer(app).listen(15225, function(){
   console.log("Express server listening on port " + 15225);

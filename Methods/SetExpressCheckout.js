@@ -15,7 +15,7 @@ var SetExpressCheckout = function (obj) {
 		this.add("PAYMENTREQUEST_0_CURRENCYCODE", obj.currencyCode);
 
 	}
-	this.add("PAYMENTREQUEST_0_CUSTOM", obj.type);
+	this.add("PAYMENTREQUEST_0_CUSTOM", JSON.stringify(obj.custom || {type: obj.type}));
 	this.add("cancelUrl", this.getCancelUrl());
 	this.add("returnUrl", this.getReturnUrl());
 };
